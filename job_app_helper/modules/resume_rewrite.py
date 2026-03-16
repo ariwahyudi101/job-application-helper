@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from job_app_helper.models import GapReport, ParsedJob
@@ -30,8 +31,8 @@ class ResumeRewriteModule:
         )
         response = self.ai_client.generate(prompt)
 
-        safe_company = parsed_job.company.lower().replace(" ", "_")
-        safe_title = parsed_job.title.lower().replace(" ", "_")
+        safe_company = re.sub(r"[^\w\-]", "_", parsed_job.company.lower())
+        safe_title = re.sub(r"[^\w\-]", "_", parsed_job.title.lower())
         output_path = self.output_dir / f"resume_{safe_company}_{safe_title}.md"
         output_path.write_text(response.text.strip() + "\n", encoding="utf-8")
         return str(output_path)

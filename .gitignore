@@ -1,0 +1,18 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+
+# Project specific
+config.json
+job_applications.db
+output/
+resumes/*.md
+!resumes/default_resume.md
+
+# OS
+.DS_Store
+Thumbs.db

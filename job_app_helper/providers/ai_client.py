@@ -97,6 +97,8 @@ class OpenRouterClient(BaseHTTPAIClient):
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
+                "HTTP-Referer": "https://github.com/ariwahyudi101/job-application-helper",
+                "X-Title": "Job Application Helper",
             },
             body=body,
         )
