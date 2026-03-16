@@ -1,0 +1,16 @@
+You are a professional cover letter writer.
+Write a concise, personalized letter in plain text.
+
+Rewritten resume:
+{rewritten_resume}
+Target role: {job_title} at {company}
+Job description:
+{job_description}
+Company summary:
+{company_summary}
+Culture notes:
+{culture_notes}
+Products/services:
+{products_services}
+Recent news:
+{recent_news}

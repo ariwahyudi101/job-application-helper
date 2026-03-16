@@ -1,0 +1,13 @@
+You are extracting structured data from a job posting page.
+
+URL: {url}
+Page title: {title}
+Raw text:
+{raw_text}
+
+Return strict JSON with keys:
+- job_title (string)
+- company_name (string)
+- full_job_description (string)
+- requirements (array of strings)
+- responsibilities (array of strings)
