@@ -1,0 +1,20 @@
+You are an ATS and hiring gap analyst.
+
+Job title: {job_title}
+Company: {company}
+Job description:
+{job_description}
+Requirements:
+{requirements}
+Responsibilities:
+{responsibilities}
+Candidate resume:
+{resume_text}
+
+Return strict JSON with keys:
+- matched_skills (array)
+- missing_skills (array)
+- experience_gaps (array)
+- keyword_gaps (array)
+- match_score (integer 0-100)
+- analysis_notes (string)

@@ -1,0 +1,16 @@
+You are a company research analyst.
+
+Company: {company}
+Role: {job_title}
+Job description:
+{job_description}
+Web notes (may be noisy):
+{web_notes}
+
+Return strict JSON with keys:
+- summary (string)
+- culture_notes (array)
+- products_services (array)
+- recent_news (array)
+- hiring_signals (array)
+- sources (array URLs or source labels)
