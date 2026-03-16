@@ -4,6 +4,7 @@ import argparse
 
 from job_app_helper.app import JobApplicationPipeline
 from job_app_helper.config import load_settings
+from job_app_helper.providers.ai_client import AIError
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -27,12 +28,17 @@ def main() -> None:
     settings = load_settings(args.config)
     pipeline = JobApplicationPipeline(settings)
 
-    if args.command == "run":
-        app_id = pipeline.run_application(args.url)
-        print(f"Application stored with id={app_id}")
-    elif args.command == "ask":
-        answer = pipeline.ask(args.application_id, args.question)
-        print(answer)
+    try:
+        if args.command == "run":
+            app_id = pipeline.run_application(args.url)
+            print(f"Application stored with id={app_id}")
+        elif args.command == "ask":
+            answer = pipeline.ask(args.application_id, args.question)
+            print(answer)
+    except AIError as exc:
+        print(f"AI request failed: {exc}")
+        print("Tip: check API keys, model names, provider order, and network timeouts in config.")
+        raise SystemExit(2)
 
 
 if __name__ == "__main__":

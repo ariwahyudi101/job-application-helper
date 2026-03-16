@@ -6,7 +6,10 @@
     "fallback_model": "deepseek-chat",
     "openrouter_api_key": "",
     "deepseek_api_key": "",
-    "request_timeout_seconds": 60
+    "request_timeout_seconds": 60,
+    "connect_timeout_seconds": 15,
+    "max_retries": 1,
+    "retry_backoff_seconds": 1.5
   },
   "paths": {
     "default_resume_path": "resumes/default_resume.md",

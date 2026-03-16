@@ -64,6 +64,12 @@ Set API keys via `config.json` or env vars:
 - `OPENROUTER_API_KEY`
 - `DEEPSEEK_API_KEY`
 
+Provider reliability notes:
+- Provider order is controlled by `ai.primary_provider` and `ai.fallback_provider`.
+- If a provider key is missing, it is skipped automatically.
+- HTTP calls use configurable `connect_timeout_seconds`, `request_timeout_seconds`, and retry settings (`max_retries`, `retry_backoff_seconds`).
+- OpenRouter 404 guardrail/privacy failures include a direct hint to update privacy settings.
+
 Run pipeline:
 
 ```bash

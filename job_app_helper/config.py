@@ -16,6 +16,9 @@ class AIProviderConfig:
     openrouter_api_key: str = ""
     deepseek_api_key: str = ""
     request_timeout_seconds: int = 60
+    connect_timeout_seconds: int = 15
+    max_retries: int = 1
+    retry_backoff_seconds: float = 1.5
 
 
 @dataclass
@@ -57,6 +60,19 @@ def _deep_update(base: dict[str, Any], override: dict[str, Any]) -> dict[str, An
     return base
 
 
+def _coerce_numbers(ai_payload: dict[str, Any]) -> dict[str, Any]:
+    int_fields = ["request_timeout_seconds", "connect_timeout_seconds", "max_retries"]
+    for field_name in int_fields:
+        value = ai_payload.get(field_name)
+        if isinstance(value, str) and value.strip():
+            ai_payload[field_name] = int(value)
+
+    backoff = ai_payload.get("retry_backoff_seconds")
+    if isinstance(backoff, str) and backoff.strip():
+        ai_payload["retry_backoff_seconds"] = float(backoff)
+    return ai_payload
+
+
 def load_settings(config_path: str = "config.json") -> Settings:
     # Environment variables are intentionally flat and optional for easy overrides.
     env_overrides = {
@@ -67,6 +83,10 @@ def load_settings(config_path: str = "config.json") -> Settings:
             "fallback_model": os.getenv("JAH_FALLBACK_MODEL"),
             "openrouter_api_key": os.getenv("OPENROUTER_API_KEY"),
             "deepseek_api_key": os.getenv("DEEPSEEK_API_KEY"),
+            "request_timeout_seconds": os.getenv("JAH_REQUEST_TIMEOUT_SECONDS"),
+            "connect_timeout_seconds": os.getenv("JAH_CONNECT_TIMEOUT_SECONDS"),
+            "max_retries": os.getenv("JAH_MAX_RETRIES"),
+            "retry_backoff_seconds": os.getenv("JAH_RETRY_BACKOFF_SECONDS"),
         },
         "paths": {
             "default_resume_path": os.getenv("JAH_DEFAULT_RESUME_PATH"),
@@ -98,6 +118,7 @@ def load_settings(config_path: str = "config.json") -> Settings:
         for section, values in env_overrides.items()
     }
     payload = _deep_update(payload, sanitized_env)
+    payload["ai"] = _coerce_numbers(payload["ai"])
 
     settings = Settings(
         ai=AIProviderConfig(**payload["ai"]),
