@@ -14,3 +14,8 @@ Products/services:
 {products_services}
 Recent news:
 {recent_news}
+
+Use this output language code: {language}.
+- If language is 'en', write the cover letter in English.
+- If language is 'id', write the cover letter in Bahasa Indonesia.
+

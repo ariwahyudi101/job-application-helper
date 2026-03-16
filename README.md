@@ -70,15 +70,20 @@ Provider reliability notes:
 - HTTP calls use configurable `connect_timeout_seconds`, `request_timeout_seconds`, and retry settings (`max_retries`, `retry_backoff_seconds`).
 - OpenRouter 404 guardrail/privacy failures include a direct hint to update privacy settings.
 
-Run pipeline:
+Run interactive menu (recommended):
+
+```bash
+python main.py
+```
+
+Menu options:
+- Masukkan URL lowongan baru
+- Bertanya tentang lowongan yang sudah lewat
+
+Optional: command mode is still available:
 
 ```bash
 python main.py --config config.json run "https://example.com/job-posting"
-```
-
-Ask a stored application question:
-
-```bash
 python main.py --config config.json ask 1 "What were my keyword gaps?"
 ```
 

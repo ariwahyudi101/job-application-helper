@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import sys
 
 from job_app_helper.app import JobApplicationPipeline
 from job_app_helper.config import load_settings
@@ -23,7 +24,61 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
+def _prompt_non_empty(message: str) -> str:
+    while True:
+        value = input(message).strip()
+        if value:
+            return value
+        print("Input tidak boleh kosong.")
+
+
+def run_interactive(pipeline: JobApplicationPipeline) -> None:
+    print("=== Job Application Helper (Interactive Menu) ===")
+
+    while True:
+        print("\nPilih menu:")
+        print("1) Masukkan URL lowongan baru")
+        print("2) Bertanya tentang lowongan yang sudah lewat")
+        print("3) Keluar")
+
+        choice = input("Masukkan pilihan (1/2/3): ").strip()
+
+        if choice == "1":
+            url = _prompt_non_empty("URL lowongan: ")
+            try:
+                app_id = pipeline.run_application(url)
+                print(f"Berhasil. Application tersimpan dengan id={app_id}")
+            except AIError as exc:
+                print(f"AI request failed: {exc}")
+                print("Tip: cek API key, model, provider order, dan timeout di config.")
+        elif choice == "2":
+            raw_id = _prompt_non_empty("Application ID: ")
+            if not raw_id.isdigit():
+                print("Application ID harus berupa angka.")
+                continue
+
+            question = _prompt_non_empty("Pertanyaan: ")
+            try:
+                answer = pipeline.ask(int(raw_id), question)
+                print("\nJawaban:")
+                print(answer)
+            except AIError as exc:
+                print(f"AI request failed: {exc}")
+                print("Tip: cek API key, model, provider order, dan timeout di config.")
+        elif choice == "3":
+            print("Sampai jumpa!")
+            break
+        else:
+            print("Pilihan tidak valid. Silakan pilih 1, 2, atau 3.")
+
+
 def main() -> None:
+    if len(sys.argv) == 1:
+        settings = load_settings("config.json")
+        pipeline = JobApplicationPipeline(settings)
+        run_interactive(pipeline)
+        return
+
     args = build_parser().parse_args()
     settings = load_settings(args.config)
     pipeline = JobApplicationPipeline(settings)
