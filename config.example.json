@@ -1,0 +1,30 @@
+{
+  "ai": {
+    "primary_provider": "openrouter",
+    "fallback_provider": "deepseek",
+    "primary_model": "deepseek/deepseek-chat-v3-0324",
+    "fallback_model": "deepseek-chat",
+    "openrouter_api_key": "",
+    "deepseek_api_key": "",
+    "request_timeout_seconds": 60,
+    "connect_timeout_seconds": 15,
+    "max_retries": 1,
+    "retry_backoff_seconds": 1.5
+  },
+  "paths": {
+    "default_resume_path": "resumes/default_resume.md",
+    "output_dir": "output",
+    "prompts_dir": "job_app_helper/prompts",
+    "templates_dir": "job_app_helper/templates"
+  },
+  "storage": {
+    "backend": "sqlite",
+    "sqlite_db_path": "job_applications.db"
+  },
+  "search": {
+    "enabled": false,
+    "search_api_base_url": "",
+    "search_api_key": "",
+    "max_results": 5
+  }
+}
