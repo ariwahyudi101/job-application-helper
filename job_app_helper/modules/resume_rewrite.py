@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import re
 from pathlib import Path
 
 from job_app_helper.models import GapReport, ParsedJob
@@ -16,7 +15,13 @@ class ResumeRewriteModule:
         self.prompts_dir = prompts_dir
         self.output_dir = Path(output_dir)
 
-    def rewrite(self, default_resume_path: str, parsed_job: ParsedJob, gap_report: GapReport) -> str:
+    def rewrite(
+        self,
+        default_resume_path: str,
+        parsed_job: ParsedJob,
+        gap_report: GapReport,
+        output_path: str | None = None,
+    ) -> str:
         resume_text = Path(default_resume_path).read_text(encoding="utf-8")
         prompt_template = read_prompt(self.prompts_dir, "resume_rewrite_prompt.txt")
         prompt = prompt_template.format(
@@ -32,8 +37,7 @@ class ResumeRewriteModule:
         )
         response = self.ai_client.generate(prompt)
 
-        safe_company = re.sub(r"[^\w\-]", "_", parsed_job.company.lower())
-        safe_title = re.sub(r"[^\w\-]", "_", parsed_job.title.lower())
-        output_path = self.output_dir / f"resume_{safe_company}_{safe_title}.md"
-        output_path.write_text(response.text.strip() + "\n", encoding="utf-8")
-        return str(output_path)
+        resolved_output_path = Path(output_path) if output_path else self.output_dir / "resume.md"
+        resolved_output_path.parent.mkdir(parents=True, exist_ok=True)
+        resolved_output_path.write_text(response.text.strip() + "\n", encoding="utf-8")
+        return str(resolved_output_path)

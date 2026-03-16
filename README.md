@@ -7,8 +7,9 @@ Lean, modular Python CLI that automates a personal job application workflow:
 3. Analyze resume gaps and match score
 4. Rewrite resume for ATS alignment (`.md`)
 5. Generate cover letter (`.txt`)
-6. Store all artifacts in SQLite
-7. Query previous applications with natural language
+6. Rapikan output per lowongan ke folder pendek (AI-generated naming)
+7. Store all artifacts in SQLite
+8. Query previous applications with natural language
 
 ## Folder structure
 
@@ -20,6 +21,9 @@ job-application-helper/
 ├── resumes/
 │   └── default_resume.md
 ├── output/
+│   ├── acme-data-eng/
+│   │   ├── resume.md
+│   │   └── cover-letter.txt
 ├── job_app_helper/
 │   ├── __init__.py
 │   ├── app.py
@@ -33,6 +37,7 @@ job-application-helper/
 │   │   ├── gap_analysis.py
 │   │   ├── resume_rewrite.py
 │   │   ├── cover_letter.py
+│   │   ├── output_namer.py
 │   │   └── query_chat.py
 │   ├── providers/
 │   │   ├── __init__.py
@@ -92,8 +97,8 @@ python main.py --config config.json ask 1 "What were my keyword gaps?"
 - `JobParserModule.parse(url: str) -> ParsedJob`
 - `CompanyResearchModule.research(parsed_job: ParsedJob) -> CompanyResearch`
 - `GapAnalysisModule.analyze(parsed_job: ParsedJob, default_resume_path: str) -> GapReport`
-- `ResumeRewriteModule.rewrite(default_resume_path: str, parsed_job: ParsedJob, gap_report: GapReport) -> str`
-- `CoverLetterModule.write(rewritten_resume_path: str, parsed_job: ParsedJob, company_research: CompanyResearch) -> str`
+- `ResumeRewriteModule.rewrite(default_resume_path: str, parsed_job: ParsedJob, gap_report: GapReport, output_path: str | None = None) -> str`
+- `CoverLetterModule.write(rewritten_resume_path: str, parsed_job: ParsedJob, company_research: CompanyResearch, output_path: str | None = None) -> str`
 - `SQLiteApplicationRepository.save_application(record: ApplicationRecord) -> int`
 - `QueryChatModule.ask(application_id: int, question: str) -> str`
 
