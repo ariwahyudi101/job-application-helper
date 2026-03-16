@@ -28,6 +28,7 @@ class CoverLetterModule:
             culture_notes="\n".join(f"- {c}" for c in company_research.culture_notes),
             products_services="\n".join(f"- {p}" for p in company_research.products_services),
             recent_news="\n".join(f"- {n}" for n in company_research.recent_news),
+            language=parsed_job.language,
         )
         response = self.ai_client.generate(prompt)
 

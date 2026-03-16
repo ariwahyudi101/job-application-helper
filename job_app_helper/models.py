@@ -13,6 +13,7 @@ class ParsedJob:
     description: str
     requirements: list[str]
     responsibilities: list[str]
+    language: str = "en"
     cleaned_by_ai: bool = False
 
 

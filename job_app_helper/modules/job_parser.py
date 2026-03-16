@@ -26,6 +26,9 @@ class JobParserModule:
         prompt = prompt_template.format(url=url, title=title, raw_text=page_text[:20000])
         response = self.ai_client.generate(prompt)
         structured = extract_json_block(response.text)
+        language = str(structured.get("language", "en")).strip().lower()
+        if language not in {"id", "en"}:
+            language = "id" if "bahasa indonesia" in page_text.lower() else "en"
 
         return ParsedJob(
             url=url,
@@ -34,5 +37,6 @@ class JobParserModule:
             description=structured.get("full_job_description", ""),
             requirements=structured.get("requirements", []),
             responsibilities=structured.get("responsibilities", []),
+            language=language,
             cleaned_by_ai=True,
         )

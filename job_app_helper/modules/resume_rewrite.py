@@ -28,6 +28,7 @@ class ResumeRewriteModule:
             matched_skills="\n".join(f"- {s}" for s in gap_report.matched_skills),
             missing_skills="\n".join(f"- {s}" for s in gap_report.missing_skills),
             keyword_gaps="\n".join(f"- {k}" for k in gap_report.keyword_gaps),
+            language=parsed_job.language,
         )
         response = self.ai_client.generate(prompt)
 

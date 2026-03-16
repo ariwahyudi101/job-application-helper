@@ -16,3 +16,8 @@ Missing skills:
 {missing_skills}
 Keyword gaps:
 {keyword_gaps}
+
+Use this output language code: {language}.
+- If language is 'en', write the resume in English.
+- If language is 'id', write the resume in Bahasa Indonesia.
+
