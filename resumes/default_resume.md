@@ -105,6 +105,6 @@ PT. Mitra Nasional Pratama | Feb 2008 - Jan 2009 | _Industry: Coal Mining_
 - Front Man Leadership Program (OrbexCorp Institute, 2012)
 - Fleet Management System Training (Jigsaw Technologies, 2011)
 
-**SITE PLACEMENT WILLINGNESS**
+**Additional Info**
 
 Willing to be placed on site as required.

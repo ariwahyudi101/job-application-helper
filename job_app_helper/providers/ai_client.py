@@ -22,7 +22,13 @@ class AIResponse:
 
 
 class AIClient:
-    def generate(self, prompt: str, system_prompt: str | None = None) -> AIResponse:
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: str | None = None,
+        provider_override: str | None = None,
+        model_override: str | None = None,
+    ) -> AIResponse:
         raise NotImplementedError
 
 
@@ -79,13 +85,20 @@ class BaseHTTPAIClient(AIClient):
 class OpenRouterClient(BaseHTTPAIClient):
     provider_name = "openrouter"
 
-    def generate(self, prompt: str, system_prompt: str | None = None) -> AIResponse:
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: str | None = None,
+        provider_override: str | None = None,
+        model_override: str | None = None,
+    ) -> AIResponse:
         api_key = self.settings.ai.openrouter_api_key
         if not api_key:
             raise AIError("OPENROUTER_API_KEY missing")
 
+        model_name = model_override or self.settings.ai.primary_model
         body: dict[str, Any] = {
-            "model": self.settings.ai.primary_model,
+            "model": model_name,
             "messages": [],
         }
         if system_prompt:
@@ -103,19 +116,26 @@ class OpenRouterClient(BaseHTTPAIClient):
             body=body,
         )
         text = data["choices"][0]["message"]["content"]
-        return AIResponse(text=text, provider="openrouter", model=self.settings.ai.primary_model)
+        return AIResponse(text=text, provider="openrouter", model=model_name)
 
 
 class DeepSeekClient(BaseHTTPAIClient):
     provider_name = "deepseek"
 
-    def generate(self, prompt: str, system_prompt: str | None = None) -> AIResponse:
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: str | None = None,
+        provider_override: str | None = None,
+        model_override: str | None = None,
+    ) -> AIResponse:
         api_key = self.settings.ai.deepseek_api_key
         if not api_key:
             raise AIError("DEEPSEEK_API_KEY missing")
 
+        model_name = model_override or self.settings.ai.fallback_model
         body: dict[str, Any] = {
-            "model": self.settings.ai.fallback_model,
+            "model": model_name,
             "messages": [],
         }
         if system_prompt:
@@ -131,26 +151,77 @@ class DeepSeekClient(BaseHTTPAIClient):
             body=body,
         )
         text = data["choices"][0]["message"]["content"]
-        return AIResponse(text=text, provider="deepseek", model=self.settings.ai.fallback_model)
+        return AIResponse(text=text, provider="deepseek", model=model_name)
+
+
+class GroqClient(BaseHTTPAIClient):
+    provider_name = "groq"
+
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: str | None = None,
+        provider_override: str | None = None,
+        model_override: str | None = None,
+    ) -> AIResponse:
+        api_key = self.settings.ai.groq_api_key
+        if not api_key:
+            raise AIError("GROQ_API_KEY missing")
+
+        model_name = model_override or self.settings.ai.primary_model
+        body: dict[str, Any] = {
+            "model": model_name,
+            "messages": [],
+        }
+        if system_prompt:
+            body["messages"].append({"role": "system", "content": system_prompt})
+        body["messages"].append({"role": "user", "content": prompt})
+
+        data = self._post_with_retries(
+            "https://api.groq.com/openai/v1/chat/completions",
+            headers={
+                "Authorization": f"Bearer {api_key}",
+                "Content-Type": "application/json",
+            },
+            body=body,
+        )
+        text = data["choices"][0]["message"]["content"]
+        return AIResponse(text=text, provider="groq", model=model_name)
 
 
 class FallbackAIClient(AIClient):
     def __init__(self, settings: Settings) -> None:
         self.settings = settings
         self._clients = {
+            "groq": GroqClient(settings),
             "openrouter": OpenRouterClient(settings),
             "deepseek": DeepSeekClient(settings),
         }
 
     def _provider_enabled(self, provider: str) -> bool:
+        if provider == "groq":
+            return bool(self.settings.ai.groq_api_key)
         if provider == "openrouter":
             return bool(self.settings.ai.openrouter_api_key)
         if provider == "deepseek":
             return bool(self.settings.ai.deepseek_api_key)
         return False
 
-    def generate(self, prompt: str, system_prompt: str | None = None) -> AIResponse:
-        order = [self.settings.ai.primary_provider.lower(), self.settings.ai.fallback_provider.lower()]
+    def generate(
+        self,
+        prompt: str,
+        system_prompt: str | None = None,
+        provider_override: str | None = None,
+        model_override: str | None = None,
+    ) -> AIResponse:
+        if provider_override:
+            primary = provider_override.lower()
+            order = [primary]
+            fallback = self.settings.ai.fallback_provider.lower()
+            if fallback not in order:
+                order.append(fallback)
+        else:
+            order = [self.settings.ai.primary_provider.lower(), self.settings.ai.fallback_provider.lower()]
         tried_errors: list[str] = []
 
         for provider in order:
@@ -162,7 +233,13 @@ class FallbackAIClient(AIClient):
                 tried_errors.append(f"provider '{provider}' skipped (missing API key)")
                 continue
             try:
-                return client.generate(prompt=prompt, system_prompt=system_prompt)
+                effective_model_override = model_override if not provider_override or provider == provider_override.lower() else None
+                return client.generate(
+                    prompt=prompt,
+                    system_prompt=system_prompt,
+                    provider_override=provider_override,
+                    model_override=effective_model_override,
+                )
             except AIError as exc:
                 tried_errors.append(f"{provider}: {exc}")
 

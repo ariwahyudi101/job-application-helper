@@ -17,6 +17,9 @@ def build_parser() -> argparse.ArgumentParser:
     run_cmd = sub.add_parser("run", help="Run full pipeline for a job posting URL")
     run_cmd.add_argument("url", help="Job posting URL")
 
+    regenerate_cmd = sub.add_parser("regenerate", help="Regenerate analyses and documents for a stored application")
+    regenerate_cmd.add_argument("application_id", type=int)
+
     ask_cmd = sub.add_parser("ask", help="Ask question about a stored application")
     ask_cmd.add_argument("application_id", type=int)
     ask_cmd.add_argument("question")
@@ -32,6 +35,47 @@ def _prompt_non_empty(message: str) -> str:
         print("Input tidak boleh kosong.")
 
 
+def _print_run_result(result, *, language: str) -> None:
+    if language == "id":
+        print(f"Berhasil. Application tersimpan dengan id={result.application_id}")
+        if result.rewrite_decision_reason == "baseline_gate":
+            print(
+                f"Skor awal {result.match_score}/100 melewati gate. Resume dan surat lamaran dibuat."
+            )
+        elif result.rewrite_decision_reason == "transferable_override":
+            print(
+                f"Skor awal {result.match_score}/100 tetap dilanjutkan karena sinyal transferable fit kuat. Resume dan surat lamaran dibuat."
+            )
+        else:
+            print(
+                f"Skor awal {result.match_score}/100 di bawah gate. Resume dasar, catatan cover letter, dan report tetap disimpan."
+            )
+    else:
+        print(f"Application stored with id={result.application_id}")
+        if result.rewrite_decision_reason == "baseline_gate":
+            print(f"Baseline score {result.match_score}/100 passed the gate.")
+        elif result.rewrite_decision_reason == "transferable_override":
+            print(
+                f"Baseline score {result.match_score}/100 advanced via transferable-fit override."
+            )
+        else:
+            print(
+                f"Baseline score {result.match_score}/100 missed the gate. Baseline resume and review artifacts were still saved."
+            )
+
+    print(f"Resume: {result.resume_path}")
+    print(f"Cover letter: {result.cover_letter_path}")
+    print(f"Report: {result.report_path}")
+    if result.step_timings:
+        if language == "id":
+            print("Timing:")
+        else:
+            print("Timing:")
+        for step_name, duration in sorted(result.step_timings.items(), key=lambda item: item[1], reverse=True):
+            print(f"- {step_name}: {duration:.1f}s")
+        print(f"Total: {result.total_duration_seconds:.1f}s")
+
+
 def run_interactive(pipeline: JobApplicationPipeline) -> None:
     print("=== Job Application Helper (Interactive Menu) ===")
 
@@ -39,15 +83,16 @@ def run_interactive(pipeline: JobApplicationPipeline) -> None:
         print("\nPilih menu:")
         print("1) Masukkan URL lowongan baru")
         print("2) Bertanya tentang lowongan yang sudah lewat")
-        print("3) Keluar")
+        print("3) Regenerate ulang analisis dan dokumen")
+        print("4) Keluar")
 
-        choice = input("Masukkan pilihan (1/2/3): ").strip()
+        choice = input("Masukkan pilihan (1/2/3/4): ").strip()
 
         if choice == "1":
             url = _prompt_non_empty("URL lowongan: ")
             try:
-                app_id = pipeline.run_application(url)
-                print(f"Berhasil. Application tersimpan dengan id={app_id}")
+                result = pipeline.run_application(url, progress_callback=print)
+                _print_run_result(result, language="id")
             except AIError as exc:
                 print(f"AI request failed: {exc}")
                 print("Tip: cek API key, model, provider order, dan timeout di config.")
@@ -66,10 +111,24 @@ def run_interactive(pipeline: JobApplicationPipeline) -> None:
                 print(f"AI request failed: {exc}")
                 print("Tip: cek API key, model, provider order, dan timeout di config.")
         elif choice == "3":
+            raw_id = _prompt_non_empty("Application ID yang mau diregenerate: ")
+            if not raw_id.isdigit():
+                print("Application ID harus berupa angka.")
+                continue
+
+            try:
+                result = pipeline.regenerate_application(int(raw_id), progress_callback=print)
+                _print_run_result(result, language="id")
+            except ValueError as exc:
+                print(str(exc))
+            except AIError as exc:
+                print(f"AI request failed: {exc}")
+                print("Tip: cek API key, model, provider order, dan timeout di config.")
+        elif choice == "4":
             print("Sampai jumpa!")
             break
         else:
-            print("Pilihan tidak valid. Silakan pilih 1, 2, atau 3.")
+            print("Pilihan tidak valid. Silakan pilih 1, 2, 3, atau 4.")
 
 
 def main() -> None:
@@ -85,11 +144,17 @@ def main() -> None:
 
     try:
         if args.command == "run":
-            app_id = pipeline.run_application(args.url)
-            print(f"Application stored with id={app_id}")
+            result = pipeline.run_application(args.url, progress_callback=print)
+            _print_run_result(result, language="en")
+        elif args.command == "regenerate":
+            result = pipeline.regenerate_application(args.application_id, progress_callback=print)
+            _print_run_result(result, language="en")
         elif args.command == "ask":
             answer = pipeline.ask(args.application_id, args.question)
             print(answer)
+    except ValueError as exc:
+        print(str(exc))
+        raise SystemExit(1)
     except AIError as exc:
         print(f"AI request failed: {exc}")
         print("Tip: check API keys, model names, provider order, and network timeouts in config.")

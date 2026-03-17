@@ -1,0 +1,122 @@
+You are preparing a concise job application report for the candidate.
+Today's date: {current_date}
+Output markdown only.
+
+Use this output language code: {language}.
+- If language is 'en', write the report in English.
+- If language is 'id', write the report in Bahasa Indonesia.
+
+The report must be concise, practical, and easy to scan.
+Use this structure exactly:
+
+# Application Report
+## Snapshot
+- Role, company, and overall application context in 2-4 bullets.
+
+## Score Summary
+- Original resume score: X/100
+- Final resume score: Y/100
+- Score change: +/-N
+- One short interpretation sentence, explicitly noting whether the vacancy passed the baseline gate or advanced via transferable-fit override.
+
+## Main Gaps
+- 3-6 bullets covering the most important original gaps.
+
+## Gap Closure
+- 3-6 bullets explaining which gaps the rewritten resume improved, which gaps remain open, and whether the rewrite materially closes the gap.
+- If rewrite_performed is "no", explain that tailoring was intentionally skipped because the profile lacked both baseline score and strong transferable override signals.
+
+## Company Notes
+- 2-5 bullets about what the company does, relevant culture/hiring signals, and anything useful for interview/application strategy.
+
+## Cover Letter Angle
+- 2-4 bullets summarizing the main message/theme of the cover letter and what it tries to sell.
+
+## Recommendation
+- One short paragraph with the most useful next-step advice for the candidate before applying.
+- If rewrite_performed is "no", recommend skipping the application unless there is new real evidence that can raise the baseline or materially strengthen transferable fit.
+
+Rules:
+- Be concrete and analytical.
+- Do not repeat the entire resume or cover letter.
+- Prefer bullets over long paragraphs.
+- Mention remaining risk areas explicitly if the final resume still has gaps.
+- If the final resume score did not improve meaningfully, say so clearly.
+- Evaluate timeline comments against Today's date above. Do not flag experience as future-dated unless it truly starts after Today's date.
+
+Job title: {job_title}
+Company: {company}
+Rewrite performed: {rewrite_performed}
+Rewrite decision reason: {rewrite_decision_reason}
+Baseline gate: {gate_threshold}
+Apply target: {target_apply_score}
+Stretch target: {stretch_score}
+Job description:
+{job_description}
+
+Requirements:
+{requirements}
+
+Responsibilities:
+{responsibilities}
+
+Company summary:
+{company_summary}
+
+Culture notes:
+{culture_notes}
+
+Products/services:
+{products_services}
+
+Recent news:
+{recent_news}
+
+Hiring signals:
+{hiring_signals}
+
+Original resume score: {original_score}
+Original matched skills:
+{original_matched}
+Original missing skills:
+{original_missing}
+Original experience gaps:
+{original_experience_gaps}
+Original keyword gaps:
+{original_keyword_gaps}
+Original closeable gaps:
+{original_closeable_gaps}
+Original stretch gaps:
+{original_stretch_gaps}
+Original hard-stop gaps:
+{original_hard_stop_gaps}
+Original notes:
+{original_notes}
+
+Final resume score: {final_score}
+Final matched skills:
+{final_matched}
+Final missing skills:
+{final_missing}
+Final experience gaps:
+{final_experience_gaps}
+Final keyword gaps:
+{final_keyword_gaps}
+Final closeable gaps:
+{final_closeable_gaps}
+Final stretch gaps:
+{final_stretch_gaps}
+Final hard-stop gaps:
+{final_hard_stop_gaps}
+Final notes:
+{final_notes}
+Deterministic final timeline assessment:
+{final_timeline_summary}
+Deterministic future-dated entries:
+{final_future_dated_entries}
+
+Rewritten resume:
+{rewritten_resume}
+
+Cover letter:
+{cover_letter}

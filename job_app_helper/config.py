@@ -9,10 +9,13 @@ from typing import Any
 
 @dataclass
 class AIProviderConfig:
-    primary_provider: str = "openrouter"
-    fallback_provider: str = "deepseek"
-    primary_model: str = "deepseek/deepseek-chat-v3-0324"
-    fallback_model: str = "deepseek-chat"
+    primary_provider: str = "groq"
+    fallback_provider: str = "openrouter"
+    primary_model: str = "openai/gpt-oss-120b"
+    fallback_model: str = "minimax/minimax-m2.5:free"
+    resume_rewrite_provider: str = "groq"
+    resume_rewrite_model: str = "openai/gpt-oss-120b"
+    groq_api_key: str = ""
     openrouter_api_key: str = ""
     deepseek_api_key: str = ""
     request_timeout_seconds: int = 60
@@ -44,11 +47,19 @@ class SearchConfig:
 
 
 @dataclass
+class OptimizationConfig:
+    min_baseline_score: int = 50
+    target_apply_score: int = 70
+    stretch_score: int = 90
+
+
+@dataclass
 class Settings:
     ai: AIProviderConfig = field(default_factory=AIProviderConfig)
     paths: PathConfig = field(default_factory=PathConfig)
     storage: StorageConfig = field(default_factory=StorageConfig)
     search: SearchConfig = field(default_factory=SearchConfig)
+    optimization: OptimizationConfig = field(default_factory=OptimizationConfig)
 
 
 def _deep_update(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
@@ -73,7 +84,24 @@ def _coerce_numbers(ai_payload: dict[str, Any]) -> dict[str, Any]:
     return ai_payload
 
 
+def _load_dotenv(dotenv_path: str = ".env") -> None:
+    path = Path(dotenv_path)
+    if not path.exists():
+        return
+
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        value = value.strip().strip('"').strip("'")
+        if key and key not in os.environ:
+            os.environ[key] = value
+
+
 def load_settings(config_path: str = "config.json") -> Settings:
+    _load_dotenv()
     # Environment variables are intentionally flat and optional for easy overrides.
     env_overrides = {
         "ai": {
@@ -81,6 +109,9 @@ def load_settings(config_path: str = "config.json") -> Settings:
             "fallback_provider": os.getenv("JAH_FALLBACK_PROVIDER"),
             "primary_model": os.getenv("JAH_PRIMARY_MODEL"),
             "fallback_model": os.getenv("JAH_FALLBACK_MODEL"),
+            "resume_rewrite_provider": os.getenv("JAH_RESUME_REWRITE_PROVIDER"),
+            "resume_rewrite_model": os.getenv("JAH_RESUME_REWRITE_MODEL"),
+            "groq_api_key": os.getenv("GROQ_API_KEY"),
             "openrouter_api_key": os.getenv("OPENROUTER_API_KEY"),
             "deepseek_api_key": os.getenv("DEEPSEEK_API_KEY"),
             "request_timeout_seconds": os.getenv("JAH_REQUEST_TIMEOUT_SECONDS"),
@@ -98,6 +129,11 @@ def load_settings(config_path: str = "config.json") -> Settings:
             "backend": os.getenv("JAH_STORAGE_BACKEND"),
             "sqlite_db_path": os.getenv("JAH_SQLITE_DB_PATH"),
         },
+        "optimization": {
+            "min_baseline_score": os.getenv("JAH_MIN_BASELINE_SCORE"),
+            "target_apply_score": os.getenv("JAH_TARGET_APPLY_SCORE"),
+            "stretch_score": os.getenv("JAH_STRETCH_SCORE"),
+        },
     }
 
     default = Settings()
@@ -106,6 +142,7 @@ def load_settings(config_path: str = "config.json") -> Settings:
         "paths": default.paths.__dict__.copy(),
         "storage": default.storage.__dict__.copy(),
         "search": default.search.__dict__.copy(),
+        "optimization": default.optimization.__dict__.copy(),
     }
 
     path = Path(config_path)
@@ -119,12 +156,17 @@ def load_settings(config_path: str = "config.json") -> Settings:
     }
     payload = _deep_update(payload, sanitized_env)
     payload["ai"] = _coerce_numbers(payload["ai"])
+    payload["optimization"] = {
+        key: int(value) if isinstance(value, str) and value.strip() else value
+        for key, value in payload["optimization"].items()
+    }
 
     settings = Settings(
         ai=AIProviderConfig(**payload["ai"]),
         paths=PathConfig(**payload["paths"]),
         storage=StorageConfig(**payload["storage"]),
         search=SearchConfig(**payload["search"]),
+        optimization=OptimizationConfig(**payload["optimization"]),
     )
     Path(settings.paths.output_dir).mkdir(parents=True, exist_ok=True)
     return settings

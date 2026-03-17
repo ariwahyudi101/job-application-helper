@@ -1,9 +1,12 @@
 {
   "ai": {
-    "primary_provider": "openrouter",
-    "fallback_provider": "deepseek",
-    "primary_model": "deepseek/deepseek-chat-v3-0324",
-    "fallback_model": "deepseek-chat",
+    "primary_provider": "groq",
+    "fallback_provider": "openrouter",
+    "primary_model": "openai/gpt-oss-120b",
+    "fallback_model": "minimax/minimax-m2.5:free",
+    "resume_rewrite_provider": "groq",
+    "resume_rewrite_model": "openai/gpt-oss-120b",
+    "groq_api_key": "",
     "openrouter_api_key": "",
     "deepseek_api_key": "",
     "request_timeout_seconds": 60,
@@ -26,5 +29,10 @@
     "search_api_base_url": "",
     "search_api_key": "",
     "max_results": 5
+  },
+  "optimization": {
+    "min_baseline_score": 50,
+    "target_apply_score": 70,
+    "stretch_score": 90
   }
 }

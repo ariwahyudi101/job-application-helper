@@ -1,4 +1,5 @@
 You are a professional cover letter writer.
+Today's date: {current_date}
 Write a concise, personalized letter in plain text.
 
 Rewritten resume:

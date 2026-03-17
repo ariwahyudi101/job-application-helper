@@ -5,11 +5,17 @@ Lean, modular Python CLI that automates a personal job application workflow:
 1. Parse a job posting URL
 2. Research the company
 3. Analyze resume gaps and match score
-4. Rewrite resume for ATS alignment (`.md`)
-5. Generate cover letter (`.txt`)
-6. Rapikan output per lowongan ke folder pendek (AI-generated naming)
-7. Store all artifacts in SQLite
-8. Query previous applications with natural language
+4. Gate low-fit roles using a baseline score threshold with a transferable-fit override for adjacent profiles
+5. Rewrite resume for ATS alignment (`.md`) when the role passes the gate or qualifies through strong transferable signals
+6. Generate cover letter (`.txt`) for passed roles, or write a skip note when the role is gated out
+7. Rapikan output per lowongan ke folder pendek (AI-generated naming)
+8. Store all artifacts in SQLite
+9. Query previous applications with natural language
+
+If a role fails the baseline gate, the app still saves:
+- a baseline resume copy inside the job output folder
+- a cover-letter note explaining why tailoring was skipped
+- the application report
 
 ## Folder structure
 
@@ -66,6 +72,7 @@ cp config.example.json config.json
 ```
 
 Set API keys via `config.json` or env vars:
+- `GROQ_API_KEY`
 - `OPENROUTER_API_KEY`
 - `DEEPSEEK_API_KEY`
 
@@ -97,7 +104,7 @@ python main.py --config config.json ask 1 "What were my keyword gaps?"
 - `JobParserModule.parse(url: str) -> ParsedJob`
 - `CompanyResearchModule.research(parsed_job: ParsedJob) -> CompanyResearch`
 - `GapAnalysisModule.analyze(parsed_job: ParsedJob, default_resume_path: str) -> GapReport`
-- `ResumeRewriteModule.rewrite(default_resume_path: str, parsed_job: ParsedJob, gap_report: GapReport, output_path: str | None = None) -> str`
+- `ResumeRewriteModule.rewrite(default_resume_path: str, parsed_job: ParsedJob, gap_report: GapReport, target_apply_score: int, stretch_score: int, output_path: str | None = None) -> str`
 - `CoverLetterModule.write(rewritten_resume_path: str, parsed_job: ParsedJob, company_research: CompanyResearch, output_path: str | None = None) -> str`
 - `SQLiteApplicationRepository.save_application(record: ApplicationRecord) -> int`
 - `QueryChatModule.ask(application_id: int, question: str) -> str`

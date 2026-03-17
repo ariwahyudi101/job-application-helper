@@ -1,4 +1,5 @@
 You are an ATS and hiring gap analyst.
+Today's date: {current_date}
 
 Job title: {job_title}
 Company: {company}
@@ -11,10 +12,41 @@ Responsibilities:
 Candidate resume:
 {resume_text}
 
+Deterministic timeline assessment:
+{timeline_summary}
+Future-dated entries:
+{future_dated_entries}
+
 Return strict JSON with keys:
 - matched_skills (array)
 - missing_skills (array)
 - experience_gaps (array)
 - keyword_gaps (array)
+- closeable_gaps (array)
+- stretch_gaps (array)
+- hard_stop_gaps (array)
 - match_score (integer 0-100)
 - analysis_notes (string)
+
+Classification rules:
+- closeable_gaps: tools, platforms, terminology, methods, reporting stacks, or adjacent workflow knowledge the candidate could realistically learn or demonstrate quickly.
+- stretch_gaps: adjacent but defensible gaps that can be reframed from existing work, such as stakeholder management, commercial support, KPI ownership, forecasting, requirements gathering, financial analysis concepts, domain transitions, or process improvement influence.
+- hard_stop_gaps: reserve this only for truly non-negotiable blockers such as legal licenses, explicit mandatory certifications, security clearance, language requirements, location/work authorization constraints, or deeply specific experience that the JD makes absolutely indispensable.
+- Do NOT classify learnable finance concepts, adjacent industry/domain exposure, analytics-to-finance transitions, 3-statement modeling, DSCR/debt sculpting, PPP/project finance exposure, or educational-background mismatch as hard stops by default. Usually these belong in stretch_gaps or missing_skills unless the JD clearly makes them legally or operationally mandatory.
+
+Scoring rules:
+- Reward strong overlap in domain, outcomes, tools, workflows, and seniority.
+- Penalize true hard-stop gaps heavily, but do not treat adjacent or learnable finance gaps as automatic deal-breakers.
+- Do not inflate score based only on keyword similarity when the core experience is missing.
+- Score the full role, not only the hardest must-have. If the job materially includes analytics, reporting, dashboarding, automation, forecasting, training, or stakeholder-facing data work, give meaningful credit for real overlap in those areas.
+- Do not treat BI/dashboard/automation/forecasting/reporting overlap as trivial if those capabilities are explicitly requested in the JD.
+- Do not let education mismatch alone dominate the score when practical experience and tooling overlap are strong.
+- Strong transferable candidates should often land in the 36-59 range even when some domain-specific finance techniques are still missing.
+- Use these score bands to calibrate consistently:
+  - 0-20: almost no relevant overlap
+  - 21-35: limited overlap; mostly generic or surface-level matches
+  - 36-49: strong transferable overlap in tools/workflows/analytics, but core domain or must-have experience is still missing
+  - 50-69: partial domain fit or very strong transferable fit with credible adjacent experience and meaningful remaining gaps
+  - 70-84: strong fit with most must-haves covered
+  - 85-100: highly direct fit with clear evidence across domain, tools, and experience
+- Evaluate chronology against Today's date above. Do not call a role "future-dated" if its start date is on or before Today's date.

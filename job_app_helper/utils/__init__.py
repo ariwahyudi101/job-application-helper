@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import json
+from datetime import date
 from pathlib import Path
+
+from job_app_helper.utils.timeline import TimelineAssessment, assess_resume_timeline, sanitize_future_dated_claims
 
 
 def load_text(path: str) -> str:
@@ -22,3 +25,18 @@ def extract_json_block(text: str) -> dict:
     if start == -1 or end == -1:
         raise ValueError("No JSON object found in model response")
     return json.loads(payload[start : end + 1])
+
+
+def current_date_context() -> str:
+    return date.today().isoformat()
+
+
+__all__ = [
+    "TimelineAssessment",
+    "assess_resume_timeline",
+    "current_date_context",
+    "extract_json_block",
+    "load_text",
+    "read_prompt",
+    "sanitize_future_dated_claims",
+]

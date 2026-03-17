@@ -14,6 +14,7 @@ class OutputNames:
     folder: str
     resume_filename: str
     cover_letter_filename: str
+    report_filename: str
 
 
 class OutputNamer:
@@ -23,14 +24,16 @@ class OutputNamer:
         self.ai_client = ai_client
         self.output_dir = Path(output_dir)
 
-    def build_paths(self, parsed_job: ParsedJob) -> tuple[str, str]:
+    def build_paths(self, parsed_job: ParsedJob, application_id: int) -> tuple[str, str, str]:
         names = self._generate_names(parsed_job)
-        target_dir = self.output_dir / names.folder
+        folder_name = f"{application_id:04d}-{names.folder}"
+        target_dir = self.output_dir / folder_name
         target_dir.mkdir(parents=True, exist_ok=True)
 
         resume_path = target_dir / names.resume_filename
         cover_letter_path = target_dir / names.cover_letter_filename
-        return str(resume_path), str(cover_letter_path)
+        report_path = target_dir / names.report_filename
+        return str(resume_path), str(cover_letter_path), str(report_path)
 
     def _generate_names(self, parsed_job: ParsedJob) -> OutputNames:
         fallback_folder = self._sanitize_short(f"{parsed_job.company}-{parsed_job.title}", max_len=26)
@@ -39,11 +42,12 @@ class OutputNamer:
 
         prompt = (
             "Generate short file naming metadata for a job application output folder.\n"
-            "Return strict JSON only (no markdown), with keys: folder, resume_filename, cover_letter_filename.\n"
+            "Return strict JSON only (no markdown), with keys: folder, resume_filename, cover_letter_filename, report_filename.\n"
             "Rules:\n"
             "- folder: 8-26 chars, lowercase, letters/numbers/hyphen only, compact and meaningful.\n"
             "- resume_filename: lowercase kebab-case ending with .md\n"
             "- cover_letter_filename: lowercase kebab-case ending with .txt\n"
+            "- report_filename: lowercase kebab-case ending with .md\n"
             "- Keep names concise and professional.\n\n"
             f"Company: {parsed_job.company}\n"
             f"Role: {parsed_job.title}\n"
@@ -58,6 +62,7 @@ class OutputNamer:
                 folder=fallback_folder,
                 resume_filename=fallback_resume,
                 cover_letter_filename=fallback_cover,
+                report_filename="application-report.md",
             )
 
         folder = self._sanitize_short(str(payload.get("folder", "")), max_len=26) or fallback_folder
@@ -71,10 +76,16 @@ class OutputNamer:
             default=fallback_cover,
             required_extension=".txt",
         )
+        report_filename = self._sanitize_filename(
+            str(payload.get("report_filename", "")),
+            default="application-report.md",
+            required_extension=".md",
+        )
         return OutputNames(
             folder=folder,
             resume_filename=resume_filename,
             cover_letter_filename=cover_letter_filename,
+            report_filename=report_filename,
         )
 
     @staticmethod

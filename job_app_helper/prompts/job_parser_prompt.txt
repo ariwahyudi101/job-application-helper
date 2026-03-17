@@ -11,5 +11,5 @@ Return strict JSON with keys:
 - full_job_description (string)
 - requirements (array of strings)
 - responsibilities (array of strings)
-- language (string, ISO 639-1 code: 'id' for Indonesian, 'en' for English; infer from the job description language)
+- language (string, ISO 639-1 code: 'id' for Indonesian, 'en' for English; infer from the main job description language, not from site chrome, country domain, or mixed navigation text)
 

@@ -17,6 +17,9 @@ class ApplicationRepository:
     def save_application(self, record: ApplicationRecord) -> int:
         raise NotImplementedError
 
+    def get_next_application_id(self) -> int:
+        raise NotImplementedError
+
     def get_application(self, application_id: int) -> dict[str, Any] | None:
         raise NotImplementedError
 
@@ -44,10 +47,17 @@ class SQLiteApplicationRepository(ApplicationRepository):
                     gap_report_json TEXT NOT NULL,
                     match_score INTEGER NOT NULL,
                     resume_path TEXT NOT NULL,
-                    cover_letter_path TEXT NOT NULL
+                    cover_letter_path TEXT NOT NULL,
+                    report_path TEXT NOT NULL DEFAULT ''
                 )
                 """
             )
+            columns = {
+                row["name"]
+                for row in conn.execute("PRAGMA table_info(applications)").fetchall()
+            }
+            if "report_path" not in columns:
+                conn.execute("ALTER TABLE applications ADD COLUMN report_path TEXT NOT NULL DEFAULT ''")
 
     def save_application(self, record: ApplicationRecord) -> int:
         with self._connect() as conn:
@@ -55,8 +65,8 @@ class SQLiteApplicationRepository(ApplicationRepository):
                 """
                 INSERT INTO applications (
                     created_at, url, parsed_job_json, company_research_json,
-                    gap_report_json, match_score, resume_path, cover_letter_path
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                    gap_report_json, match_score, resume_path, cover_letter_path, report_path
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
                     record.created_at,
@@ -67,9 +77,15 @@ class SQLiteApplicationRepository(ApplicationRepository):
                     int(record.gap_report.get("match_score", 0)),
                     record.resume_path,
                     record.cover_letter_path,
+                    record.report_path,
                 ),
             )
             return int(cur.lastrowid)
+
+    def get_next_application_id(self) -> int:
+        with self._connect() as conn:
+            row = conn.execute("SELECT COALESCE(MAX(id), 0) + 1 AS next_id FROM applications").fetchone()
+            return int(row["next_id"])
 
     def get_application(self, application_id: int) -> dict[str, Any] | None:
         with self._connect() as conn:
@@ -86,4 +102,5 @@ class SQLiteApplicationRepository(ApplicationRepository):
                 "match_score": row["match_score"],
                 "resume_path": row["resume_path"],
                 "cover_letter_path": row["cover_letter_path"],
+                "report_path": row["report_path"],
             }

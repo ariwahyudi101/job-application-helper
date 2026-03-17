@@ -36,6 +36,9 @@ class GapReport:
     keyword_gaps: list[str]
     match_score: int
     analysis_notes: str
+    closeable_gaps: list[str] = field(default_factory=list)
+    stretch_gaps: list[str] = field(default_factory=list)
+    hard_stop_gaps: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -47,6 +50,7 @@ class ApplicationRecord:
     gap_report: dict[str, Any]
     resume_path: str
     cover_letter_path: str
+    report_path: str
 
     @classmethod
     def build(
@@ -57,6 +61,7 @@ class ApplicationRecord:
         gap_report: GapReport,
         resume_path: str,
         cover_letter_path: str,
+        report_path: str,
     ) -> "ApplicationRecord":
         return cls(
             created_at=datetime.utcnow().isoformat(timespec="seconds") + "Z",
@@ -66,4 +71,18 @@ class ApplicationRecord:
             gap_report=asdict(gap_report),
             resume_path=resume_path,
             cover_letter_path=cover_letter_path,
+            report_path=report_path,
         )
+
+
+@dataclass
+class ApplicationRunResult:
+    application_id: int
+    match_score: int
+    rewrite_performed: bool
+    rewrite_decision_reason: str
+    resume_path: str
+    cover_letter_path: str
+    report_path: str
+    step_timings: dict[str, float] = field(default_factory=dict)
+    total_duration_seconds: float = 0.0
