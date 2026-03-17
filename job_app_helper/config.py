@@ -30,6 +30,8 @@ class PathConfig:
     output_dir: str = "output"
     prompts_dir: str = "job_app_helper/prompts"
     templates_dir: str = "job_app_helper/templates"
+    browser_profile_dir: str = "tmp/browser-profile"
+    automation_screenshots_dir: str = "output/browser-screenshots"
 
 
 @dataclass
@@ -54,12 +56,47 @@ class OptimizationConfig:
 
 
 @dataclass
+class AutomationConfig:
+    enabled: bool = False
+    mode: str = "semi_auto"
+    headless: bool = False
+    max_wait_seconds: int = 20
+    stop_before_submit: bool = True
+
+
+@dataclass
+class ComputerUseConfig:
+    provider: str = "gemini"
+    model: str = "gemini-2.0-flash"
+    api_key: str = ""
+    max_steps: int = 12
+    screenshot_on_each_step: bool = False
+    timeout_seconds: int = 45
+
+
+@dataclass
+class ApplicantProfileConfig:
+    full_name: str = ""
+    email: str = ""
+    phone: str = ""
+    location: str = ""
+    years_of_experience: str = ""
+    current_salary: str = ""
+    expected_salary: str = ""
+    notice_period: str = ""
+    work_authorization: str = ""
+
+
+@dataclass
 class Settings:
     ai: AIProviderConfig = field(default_factory=AIProviderConfig)
     paths: PathConfig = field(default_factory=PathConfig)
     storage: StorageConfig = field(default_factory=StorageConfig)
     search: SearchConfig = field(default_factory=SearchConfig)
     optimization: OptimizationConfig = field(default_factory=OptimizationConfig)
+    automation: AutomationConfig = field(default_factory=AutomationConfig)
+    computer_use: ComputerUseConfig = field(default_factory=ComputerUseConfig)
+    applicant_profile: ApplicantProfileConfig = field(default_factory=ApplicantProfileConfig)
 
 
 def _deep_update(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
@@ -82,6 +119,16 @@ def _coerce_numbers(ai_payload: dict[str, Any]) -> dict[str, Any]:
     if isinstance(backoff, str) and backoff.strip():
         ai_payload["retry_backoff_seconds"] = float(backoff)
     return ai_payload
+
+
+def _coerce_bool(value: Any) -> Any:
+    if isinstance(value, str):
+        lowered = value.strip().lower()
+        if lowered in {"1", "true", "yes", "on"}:
+            return True
+        if lowered in {"0", "false", "no", "off"}:
+            return False
+    return value
 
 
 def _load_dotenv(dotenv_path: str = ".env") -> None:
@@ -124,6 +171,8 @@ def load_settings(config_path: str = "config.json") -> Settings:
             "output_dir": os.getenv("JAH_OUTPUT_DIR"),
             "prompts_dir": os.getenv("JAH_PROMPTS_DIR"),
             "templates_dir": os.getenv("JAH_TEMPLATES_DIR"),
+            "browser_profile_dir": os.getenv("JAH_BROWSER_PROFILE_DIR"),
+            "automation_screenshots_dir": os.getenv("JAH_AUTOMATION_SCREENSHOTS_DIR"),
         },
         "storage": {
             "backend": os.getenv("JAH_STORAGE_BACKEND"),
@@ -134,6 +183,32 @@ def load_settings(config_path: str = "config.json") -> Settings:
             "target_apply_score": os.getenv("JAH_TARGET_APPLY_SCORE"),
             "stretch_score": os.getenv("JAH_STRETCH_SCORE"),
         },
+        "automation": {
+            "enabled": os.getenv("JAH_AUTOMATION_ENABLED"),
+            "mode": os.getenv("JAH_AUTOMATION_MODE"),
+            "headless": os.getenv("JAH_AUTOMATION_HEADLESS"),
+            "max_wait_seconds": os.getenv("JAH_AUTOMATION_MAX_WAIT_SECONDS"),
+            "stop_before_submit": os.getenv("JAH_AUTOMATION_STOP_BEFORE_SUBMIT"),
+        },
+        "computer_use": {
+            "provider": os.getenv("JAH_COMPUTER_USE_PROVIDER"),
+            "model": os.getenv("JAH_COMPUTER_USE_MODEL"),
+            "api_key": os.getenv("JAH_COMPUTER_USE_API_KEY") or os.getenv("GEMINI_API_KEY"),
+            "max_steps": os.getenv("JAH_COMPUTER_USE_MAX_STEPS"),
+            "screenshot_on_each_step": os.getenv("JAH_COMPUTER_USE_SCREENSHOT_ON_EACH_STEP"),
+            "timeout_seconds": os.getenv("JAH_COMPUTER_USE_TIMEOUT_SECONDS"),
+        },
+        "applicant_profile": {
+            "full_name": os.getenv("JAH_APPLICANT_FULL_NAME"),
+            "email": os.getenv("JAH_APPLICANT_EMAIL"),
+            "phone": os.getenv("JAH_APPLICANT_PHONE"),
+            "location": os.getenv("JAH_APPLICANT_LOCATION"),
+            "years_of_experience": os.getenv("JAH_APPLICANT_YEARS_OF_EXPERIENCE"),
+            "current_salary": os.getenv("JAH_APPLICANT_CURRENT_SALARY"),
+            "expected_salary": os.getenv("JAH_APPLICANT_EXPECTED_SALARY"),
+            "notice_period": os.getenv("JAH_APPLICANT_NOTICE_PERIOD"),
+            "work_authorization": os.getenv("JAH_APPLICANT_WORK_AUTHORIZATION"),
+        },
     }
 
     default = Settings()
@@ -143,6 +218,9 @@ def load_settings(config_path: str = "config.json") -> Settings:
         "storage": default.storage.__dict__.copy(),
         "search": default.search.__dict__.copy(),
         "optimization": default.optimization.__dict__.copy(),
+        "automation": default.automation.__dict__.copy(),
+        "computer_use": default.computer_use.__dict__.copy(),
+        "applicant_profile": default.applicant_profile.__dict__.copy(),
     }
 
     path = Path(config_path)
@@ -160,6 +238,22 @@ def load_settings(config_path: str = "config.json") -> Settings:
         key: int(value) if isinstance(value, str) and value.strip() else value
         for key, value in payload["optimization"].items()
     }
+    payload["automation"] = {
+        key: (
+            int(value)
+            if key == "max_wait_seconds" and isinstance(value, str) and value.strip()
+            else _coerce_bool(value)
+        )
+        for key, value in payload["automation"].items()
+    }
+    payload["computer_use"] = {
+        key: (
+            int(value)
+            if key in {"max_steps", "timeout_seconds"} and isinstance(value, str) and value.strip()
+            else _coerce_bool(value)
+        )
+        for key, value in payload["computer_use"].items()
+    }
 
     settings = Settings(
         ai=AIProviderConfig(**payload["ai"]),
@@ -167,6 +261,11 @@ def load_settings(config_path: str = "config.json") -> Settings:
         storage=StorageConfig(**payload["storage"]),
         search=SearchConfig(**payload["search"]),
         optimization=OptimizationConfig(**payload["optimization"]),
+        automation=AutomationConfig(**payload["automation"]),
+        computer_use=ComputerUseConfig(**payload["computer_use"]),
+        applicant_profile=ApplicantProfileConfig(**payload["applicant_profile"]),
     )
     Path(settings.paths.output_dir).mkdir(parents=True, exist_ok=True)
+    Path(settings.paths.browser_profile_dir).mkdir(parents=True, exist_ok=True)
+    Path(settings.paths.automation_screenshots_dir).mkdir(parents=True, exist_ok=True)
     return settings

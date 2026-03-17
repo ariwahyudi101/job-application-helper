@@ -51,6 +51,13 @@ class ApplicationRecord:
     resume_path: str
     cover_letter_path: str
     report_path: str
+    apply_status: str = "not_started"
+    apply_portal: str = ""
+    apply_attempted_at: str = ""
+    apply_error_reason: str = ""
+    apply_review_url: str = ""
+    apply_screenshot_path: str = ""
+    screening_answers: list[dict[str, Any]] = field(default_factory=list)
 
     @classmethod
     def build(
@@ -86,3 +93,80 @@ class ApplicationRunResult:
     report_path: str
     step_timings: dict[str, float] = field(default_factory=dict)
     total_duration_seconds: float = 0.0
+
+
+@dataclass
+class ScreeningAnswerRecord:
+    application_id: int
+    question_key: str
+    question_text: str
+    answer_text: str
+    source: str
+    created_at: str
+    field_type: str = "text"
+    options_json: str = ""
+
+    @classmethod
+    def build(
+        cls,
+        application_id: int,
+        question_key: str,
+        question_text: str,
+        answer_text: str,
+        source: str,
+        *,
+        field_type: str = "text",
+        options: list[str] | None = None,
+    ) -> "ScreeningAnswerRecord":
+        return cls(
+            application_id=application_id,
+            question_key=question_key,
+            question_text=question_text,
+            answer_text=answer_text,
+            source=source,
+            created_at=datetime.utcnow().isoformat(timespec="seconds") + "Z",
+            field_type=field_type,
+            options_json=json_dumps(options or []),
+        )
+
+
+@dataclass
+class ApplyEventRecord:
+    application_id: int
+    event_type: str
+    message: str
+    details: dict[str, Any]
+    created_at: str
+
+    @classmethod
+    def build(
+        cls,
+        application_id: int,
+        event_type: str,
+        message: str,
+        *,
+        details: dict[str, Any] | None = None,
+    ) -> "ApplyEventRecord":
+        return cls(
+            application_id=application_id,
+            event_type=event_type,
+            message=message,
+            details=details or {},
+            created_at=datetime.utcnow().isoformat(timespec="seconds") + "Z",
+        )
+
+
+@dataclass
+class ApplyRunResult:
+    application_id: int
+    apply_status: str
+    portal: str
+    review_url: str = ""
+    screenshot_path: str = ""
+    audit_markdown_path: str = ""
+    message: str = ""
+    pending_questions: list[str] = field(default_factory=list)
+
+
+def json_dumps(value: Any) -> str:
+    return __import__("json").dumps(value, ensure_ascii=False)

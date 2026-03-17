@@ -13,10 +13,12 @@ from job_app_helper.modules.company_research import CompanyResearchModule
 from job_app_helper.modules.cover_letter import CoverLetterModule
 from job_app_helper.modules.gap_analysis import GapAnalysisModule
 from job_app_helper.modules.job_parser import JobParserModule
+from job_app_helper.modules.jobstreet_apply import JobStreetApplyModule, default_jobstreet_session_factory
 from job_app_helper.modules.output_namer import OutputNamer
 from job_app_helper.modules.query_chat import QueryChatModule
 from job_app_helper.modules.resume_rewrite import ResumeRewriteModule
 from job_app_helper.providers.ai_client import FallbackAIClient
+from job_app_helper.providers.computer_use import GeminiComputerUseClient
 from job_app_helper.storage.repository import SQLiteApplicationRepository
 
 
@@ -53,6 +55,12 @@ class JobApplicationPipeline:
         )
         self.output_namer = OutputNamer(self.ai_client, settings.paths.output_dir)
         self.query_chat = QueryChatModule(self.ai_client, self.repo, settings.paths.prompts_dir)
+        self.jobstreet_apply = JobStreetApplyModule(
+            settings,
+            self.repo,
+            GeminiComputerUseClient(settings) if settings.computer_use.provider == "gemini" else None,
+            default_jobstreet_session_factory,
+        )
 
     def run_application(
         self,
@@ -226,6 +234,22 @@ class JobApplicationPipeline:
         if not application:
             raise ValueError(f"Application id={application_id} tidak ditemukan.")
         return self.run_application(application["url"], progress_callback=progress_callback)
+
+    def apply_to_jobstreet(
+        self,
+        application_id: int,
+        progress_callback: Callable[[str], None] | None = None,
+    ):
+        return self.jobstreet_apply.apply(
+            application_id,
+            progress_callback=progress_callback,
+            answer_provider=self._prompt_screening_answer,
+        )
+
+    @staticmethod
+    def _prompt_screening_answer(question_text: str) -> str:
+        print(f"\nPertanyaan screening JobStreet:\n{question_text}")
+        return input("Jawaban: ").strip()
 
     @staticmethod
     def _should_rewrite(gap, min_baseline_score: int) -> tuple[bool, str]:

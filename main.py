@@ -24,6 +24,9 @@ def build_parser() -> argparse.ArgumentParser:
     ask_cmd.add_argument("application_id", type=int)
     ask_cmd.add_argument("question")
 
+    apply_cmd = sub.add_parser("apply", help="Semi-auto apply to JobStreet for a stored application")
+    apply_cmd.add_argument("application_id", type=int)
+
     return parser
 
 
@@ -84,9 +87,10 @@ def run_interactive(pipeline: JobApplicationPipeline) -> None:
         print("1) Masukkan URL lowongan baru")
         print("2) Bertanya tentang lowongan yang sudah lewat")
         print("3) Regenerate ulang analisis dan dokumen")
-        print("4) Keluar")
+        print("4) Apply semi-auto ke JobStreet")
+        print("5) Keluar")
 
-        choice = input("Masukkan pilihan (1/2/3/4): ").strip()
+        choice = input("Masukkan pilihan (1/2/3/4/5): ").strip()
 
         if choice == "1":
             url = _prompt_non_empty("URL lowongan: ")
@@ -125,10 +129,32 @@ def run_interactive(pipeline: JobApplicationPipeline) -> None:
                 print(f"AI request failed: {exc}")
                 print("Tip: cek API key, model, provider order, dan timeout di config.")
         elif choice == "4":
+            raw_id = _prompt_non_empty("Application ID yang mau di-apply ke JobStreet: ")
+            if not raw_id.isdigit():
+                print("Application ID harus berupa angka.")
+                continue
+            try:
+                result = pipeline.apply_to_jobstreet(int(raw_id), progress_callback=print)
+                print(f"Status apply: {result.apply_status}")
+                print(f"Portal: {result.portal}")
+                if result.review_url:
+                    print(f"Review URL: {result.review_url}")
+                if result.screenshot_path:
+                    print(f"Screenshot: {result.screenshot_path}")
+                if result.audit_markdown_path:
+                    print(f"Audit trail: {result.audit_markdown_path}")
+                print(result.message)
+                if result.pending_questions:
+                    print("Pertanyaan yang masih pending:")
+                    for question in result.pending_questions:
+                        print(f"- {question}")
+            except ValueError as exc:
+                print(str(exc))
+        elif choice == "5":
             print("Sampai jumpa!")
             break
         else:
-            print("Pilihan tidak valid. Silakan pilih 1, 2, 3, atau 4.")
+            print("Pilihan tidak valid. Silakan pilih 1, 2, 3, 4, atau 5.")
 
 
 def main() -> None:
@@ -152,6 +178,16 @@ def main() -> None:
         elif args.command == "ask":
             answer = pipeline.ask(args.application_id, args.question)
             print(answer)
+        elif args.command == "apply":
+            result = pipeline.apply_to_jobstreet(args.application_id, progress_callback=print)
+            print(f"Apply status: {result.apply_status}")
+            if result.review_url:
+                print(f"Review URL: {result.review_url}")
+            if result.screenshot_path:
+                print(f"Screenshot: {result.screenshot_path}")
+            if result.audit_markdown_path:
+                print(f"Audit trail: {result.audit_markdown_path}")
+            print(result.message)
     except ValueError as exc:
         print(str(exc))
         raise SystemExit(1)

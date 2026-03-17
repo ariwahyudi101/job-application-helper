@@ -18,7 +18,9 @@
     "default_resume_path": "resumes/default_resume.md",
     "output_dir": "output",
     "prompts_dir": "job_app_helper/prompts",
-    "templates_dir": "job_app_helper/templates"
+    "templates_dir": "job_app_helper/templates",
+    "browser_profile_dir": "tmp/browser-profile",
+    "automation_screenshots_dir": "output/browser-screenshots"
   },
   "storage": {
     "backend": "sqlite",
@@ -34,5 +36,31 @@
     "min_baseline_score": 50,
     "target_apply_score": 70,
     "stretch_score": 90
+  },
+  "automation": {
+    "enabled": true,
+    "mode": "semi_auto",
+    "headless": false,
+    "max_wait_seconds": 20,
+    "stop_before_submit": true
+  },
+  "computer_use": {
+    "provider": "gemini",
+    "model": "gemini-2.0-flash",
+    "api_key": "",
+    "max_steps": 12,
+    "screenshot_on_each_step": false,
+    "timeout_seconds": 45
+  },
+  "applicant_profile": {
+    "full_name": "",
+    "email": "",
+    "phone": "",
+    "location": "",
+    "years_of_experience": "",
+    "current_salary": "",
+    "expected_salary": "",
+    "notice_period": "",
+    "work_authorization": ""
   }
 }
